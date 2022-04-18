@@ -2,6 +2,8 @@
  * Project:  neural chess
  * Author:   Jakub Urbanek
  * Year:     2022
+ * 
+ * note:     copied from my minimax-chess project
  */
 
 #include "chess_logic.h"

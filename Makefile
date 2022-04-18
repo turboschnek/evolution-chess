@@ -6,7 +6,7 @@ CC = gcc
 CFLAGS = -Wall -g -O3
 LIBS= -lm
 
-OBJFILES= main.o chess_net.o fcnn.o neuron.o chess_logic.o chess_structs.o
+OBJFILES= main.o ai.o chess_net.o fcnn.o neuron.o chess_logic.o chess_structs.o
 
 SRCDIR= src
 BINDIR= bin

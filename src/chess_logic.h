@@ -2,10 +2,12 @@
  * Project:  neural chess
  * Author:   Jakub Urbanek
  * Year:     2022
+ * 
+ * note:     copied from my minimax-chess project
  */
 
-#ifndef __MODULE_CHESS_H
-#define __MODULE_CHESS_H
+#ifndef __MODULE_CHESS_LOGIC_H
+#define __MODULE_CHESS_LOGIC_H
 
 #include "chess_structs.h"
 
