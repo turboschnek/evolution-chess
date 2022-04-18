@@ -124,7 +124,7 @@ float* propagateLayer(const Tfcnn* net, const float* inputs, int layerIndex)
   return output;
 }
 
-float* predict(const Tfcnn* net, const float* inputs)
+float* fcnnPredict(const Tfcnn* net, const float* inputs)
 {
   float* b;
 

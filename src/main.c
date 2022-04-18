@@ -14,34 +14,28 @@
 
 void chessNetworkTest()
 {
-  const int netStruct[3] = {64, 12, 1};
+  const int netStruct[4] = {64, 200, 100, 1};
   const int netStructLayerCount = sizeof(netStruct) / sizeof(*netStruct);
 
-  TchNet* net = initRandChNet(netStructLayerCount, netStruct);
-  if(net == NULL){
+  TchNet* mum = initRandChNet(netStructLayerCount, netStruct);
+  if(mum == NULL){
     fprintf(stderr, "unable to init chNet");
     return;
   }
 
-  FILE* file;
-  file = fopen("temp.txt", "w");
-  fprintChNet(file, net);
-  fclose(file);
-
-  file = fopen("temp.txt", "r");
-  TchNet* net2 = fgetChNet(file);
-  fclose(file);
-  if(net2 == NULL){
-    fprintf(stderr, "unable to get chNet from temp.txt");
+  TchNet* dad = initRandChNet(netStructLayerCount, netStruct);
+  if(dad == NULL){
+    fprintf(stderr, "unable to init chNet");
     return;
   }
 
-  file = fopen("temp2.txt", "w");
-  fprintChNet(file, net2);
-  fclose(file);
+  TchNet* kid = chNetSex(dad, mum, 0);
 
-  freeChNet(net);
-  freeChNet(net2);
+  printf("%f", chNetPredict(kid, "pPkKnNbBrRqQ     pPkKnNbBrRqQpPkKnNbBrRqQ  pPkKnNbBrRqQpPkKnNbBp"));
+
+  freeChNet(kid);
+  freeChNet(mum);
+  freeChNet(dad);
 }
 
 

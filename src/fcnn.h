@@ -79,7 +79,7 @@ float* propagateLayer(const Tfcnn* net, const float* inputs, int layerIndex);
  * 
  * @param inputs inputs of neural network
  */
-float* predict(const Tfcnn* net, const float* inputs);
+float* fcnnPredict(const Tfcnn* net, const float* inputs);
 
 /**
  * returns baby of mum and dad in parameters

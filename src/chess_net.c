@@ -9,9 +9,10 @@
 #include "neuron.h"
 
 #include <stdlib.h>
+#include <math.h>
 
-#define PREPR_NEURONS_COUNT 64  //64 pieces
-#define PREPR_NEURON_INP_COUNT 12
+#define PREPR_NEURONS_COUNT 64  // 64 pieces
+#define PREPR_NEURON_INP_COUNT 12  // 12 possible pieces
 
 TchNet* initRandChNet(int fcnnLayerCount, const int* fcnnNeuronsInLayersCount)
 {
@@ -99,11 +100,70 @@ TchNet* fgetChNet(FILE* in)
 
 float chNetPredict(const TchNet* net, const char* posString)
 {
-  #warning "chNetPredict not implemented"
+  int i;
+  float* fcnnInputs = malloc(PREPR_NEURONS_COUNT * sizeof(float));
+  
+  for(i = 0; i < PREPR_NEURONS_COUNT; ++i){
+    float* preprNeuronIputs = calloc(PREPR_NEURON_INP_COUNT, sizeof(float));
+    
+    switch(posString[i]) {
+      case 'p': preprNeuronIputs[0] = 1.0; break;
+      case 'P': preprNeuronIputs[1] = 1.0; break;
+      case 'k': preprNeuronIputs[2] = 1.0; break;
+      case 'K': preprNeuronIputs[3] = 1.0; break;
+      case 'n': preprNeuronIputs[4] = 1.0; break;
+      case 'N': preprNeuronIputs[5] = 1.0; break;
+      case 'b': preprNeuronIputs[6] = 1.0; break;
+      case 'B': preprNeuronIputs[7] = 1.0; break;
+      case 'r': preprNeuronIputs[8] = 1.0; break;
+      case 'R': preprNeuronIputs[9] = 1.0; break;
+      case 'q': preprNeuronIputs[10]= 1.0; break;
+      case 'Q': preprNeuronIputs[11]= 1.0; break;
+      case ' ': break;
+
+      case '\0':
+      default:
+        free(fcnnInputs);
+        free(preprNeuronIputs);
+        return NAN;
+    }
+
+
+    fcnnInputs[i] = calcNeuronOutput(net->preprocessingNeurons[i],
+                                     preprNeuronIputs);
+    free(preprNeuronIputs);
+  }
+
+
+  float* temptemp = fcnnPredict(net->fcnn, fcnnInputs);
+  float temp = temptemp[0];
+  free(fcnnInputs);
+  free(temptemp);
+  return temp;
 }
 
 
 TchNet* chNetSex(const TchNet* dad, const TchNet* mum, int mutationRareness)
 {
-  #warning "chNetSex not implemented"
+  TchNet* baby = malloc(sizeof(TchNet));
+  baby->preprocessingNeurons = malloc(PREPR_NEURONS_COUNT * sizeof(Tneuron*));
+  
+  // preprocessing neurons
+  for(int i = 0; i < PREPR_NEURONS_COUNT; ++i){
+    if(mutationRareness > 0 && rand() > (RAND_MAX / mutationRareness)){
+      baby->preprocessingNeurons[i] = initRandNeuron(PREPR_NEURON_INP_COUNT,
+                                              MIN_RAND_WEIGHT,
+                                              MAX_RAND_WEIGHT);
+    } else {
+      if(rand() > RAND_MAX/2){
+        baby->preprocessingNeurons[i] = cpyNeuron(dad->preprocessingNeurons[i]);
+      } else {
+        baby->preprocessingNeurons[i] = cpyNeuron(mum->preprocessingNeurons[i]);
+      }
+    }
+  }
+
+  baby->fcnn = fcnnSex(dad->fcnn, mum->fcnn, mutationRareness);
+
+  return baby;
 }
