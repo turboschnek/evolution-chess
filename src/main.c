@@ -5,6 +5,8 @@
  */
 
 #include "chess_net.h"
+#include "chess_logic.h"
+#include "chess_structs.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,9 +40,26 @@ void chessNetworkTest()
   freeChNet(dad);
 }
 
+void chessLogicBasicTest()
+{
+  Tboard* b = initBoard();
+  TmoveList* ml = initMoveList(10);
+
+  generateAllPossibleMoves(b, ml);
+
+  for(int i = 0; i < ml->filled; ++i){
+    printf("%s\n", ml->moves[i]);
+  }
+  
+  freeMoveList(ml);
+  freeBoard(b);
+}
+
 
 int main(){
   srand(time(NULL));
 
-  chessNetworkTest();
+  //chessNetworkTest();
+
+  chessLogicBasicTest();
 }
