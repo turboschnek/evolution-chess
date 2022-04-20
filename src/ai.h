@@ -20,6 +20,14 @@
  */
 void chNetEvolution();
 
+
+/**
+ * sorts population, second half is sentenced to death
+ */
+void quickTournament(TchNet** population, int populationCount, int rounds,
+                     float timeForMove);
+
+
 /**
  * lets two AIs play game of chess
  * 
@@ -30,12 +38,6 @@ void chNetEvolution();
  */
 int game(const TchNet* white, const TchNet* black, float timeBudget);
 
-
-
-/**
- * sorts population, second half is sentenced to death
- */
-void quickTournament(TchNet** population, int populationCount);
 
 /**
  * Uses minimax to choose a move.
@@ -69,8 +71,12 @@ int inner_minimax(Tboard *b, TchNet* net, int depth, bool isMax, float alfa, flo
 /**
  * sorts ml based on keys` values
  */
-void sortPopulation(TchNet** population, int *keys, bool increasing);
+void sortPopulation(TchNet** population, float *keys, int populationCount, bool increasing);
 
+/**
+ * randomizes population`s order
+ */
+void shufflePopulationWithKeys(TchNet** population, float* keys, int populationCount);
 
 /**
  * sorts ml based on keys` values
