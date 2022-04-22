@@ -10,7 +10,14 @@
 #include "chess_structs.h"
 
 #include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <time.h>
 
+
+#define MAX_MINIMAX_DEPTH 20
+
+#define MINIMAX_WIN_EVAL_COEF 100000
 
 void chNetEvolution()
 {
@@ -170,5 +177,160 @@ int game(const TchNet* white, const TchNet* black, float timeBudget)
     result = getResult(b);
   }
 
+  freeBoard(b);
+  free(moveBuffer);
   return result;
+}
+
+int minimax(Tboard *b, const TchNet* net, float seconds, char *output)
+{
+  TmoveList *ml = initMoveList(16);
+  generateAllPossibleMoves(b, ml);
+
+  // no move possible
+  if(ml->filled < 1){
+    strcpy(output, (char[5]){'n', 'o', 'm', 'o', '\0'});
+    freeMoveList(ml);
+    return -1;
+  }
+
+
+  int maxDepth = MAX_MINIMAX_DEPTH, startDepth = 1, depthStep = 1,
+      timeBudget = seconds * 1000000;
+  float depthTimeCoeff = 0.5;
+  bool isBlack = (((b->move+1) % 2) == 0),
+       isInTime = true,
+       interrupted = false;
+  
+  clock_t startTime = clock();
+
+
+  int depth = startDepth;
+  for(; depth <= maxDepth && isInTime; depth += depthStep){
+    
+    float *keys = malloc(ml->filled * sizeof(int));
+    
+    for(int i = 0; i < ml->filled && isInTime; i++){
+      Tboard *bCopy = copyBoard(b);
+      moveBoard(ml->moves[i], bCopy);
+
+      keys[i] = innerMinimax(bCopy, net, depth, isBlack, -INF, INF);
+
+      freeBoard(bCopy);
+
+      isInTime = !(startTime + timeBudget < clock());
+      interrupted = !isInTime;
+    }
+
+    if(!interrupted) sortMoveList(ml, keys, isBlack);
+
+    free(keys);
+
+    isInTime = !((startTime + timeBudget/
+                  (depthTimeCoeff * pow(10, depthStep))) < clock());
+  }
+  strcpy(output, ml->moves[0]);
+  freeMoveList(ml);
+
+  if(interrupted) depth -= depthStep;
+  
+  if(!isInTime) depth -= depthStep;
+
+  return depth+1;
+}
+
+
+float innerMinimax(Tboard *b, const TchNet* net, int depth, bool isMax, float alfa, float beta)
+{
+  if(depth == 0){
+    return evaluateBoard(b, net);
+  }
+
+  TmoveList *ml = initMoveList(8);
+  generateAllPossibleMoves(b, ml);
+
+  int result = getResultFaster(b, ml);
+  if(result < 2){
+    freeMoveList(ml);
+
+    // *(depth+1) for faster checkmates
+    return result * (MINIMAX_WIN_EVAL_COEF * (depth+1));
+  }
+
+  if(isMax){
+    float max = -INF;
+
+    for (int i = 0; i < ml->filled; i++){
+      Tboard *copy = copyBoard(b);
+      moveBoard(ml->moves[i], copy);
+
+      
+      max = fmax(max, innerMinimax(copy, net, depth-1, false, alfa, beta));
+      freeBoard(copy);
+
+      alfa = fmax(alfa, max);
+      if(beta <= alfa){
+        freeMoveList(ml);
+        return max;
+      }
+    }
+    freeMoveList(ml);
+    return max;
+  }else{
+    float min = INF;
+
+    for (int i = 0; i < ml->filled; i++){
+      Tboard *copy = copyBoard(b);
+      moveBoard(ml->moves[i], copy);
+
+      
+      min = fmin(min, innerMinimax(copy, net, depth-1, true, alfa, beta));
+      freeBoard(copy);
+
+      beta = fmin(beta, min);
+      if(beta <= alfa){
+        freeMoveList(ml);
+        return min;
+      }
+    }
+    freeMoveList(ml);
+    return min;
+  }
+}
+
+void sortMoveList(TmoveList* ml, float *keys, bool increasing)
+{
+  if(increasing){
+    for(int i = 1; i < ml->filled; i++){
+      int j;
+      float tempKey = keys[i];
+      char *tempMove = ml->moves[i];
+
+      for(j = i-1; (j >= 0 && keys[j] > tempKey); j--){
+        ml->moves[j+1] = ml->moves[j];
+        keys[j+1] = keys[j];
+      }
+      ml->moves[j+1] = tempMove;
+      keys[j+1] = tempKey;
+    }
+  } else {
+    for(int i = 1; i < ml->filled; i++){
+      int j;
+      float tempKey = keys[i];
+      char *tempMove = ml->moves[i];
+
+      //keys[j] <= tempKey   would be stable, but slower
+      for(j = i-1; (j >= 0 && keys[j] < tempKey); j--){
+        ml->moves[j+1] = ml->moves[j];
+        keys[j+1] = keys[j];
+      }
+      ml->moves[j+1] = tempMove;
+      keys[j+1] = tempKey;
+    }
+  }
+}
+
+float evaluateBoard(const Tboard* b, const TchNet* net)
+{
+  #warning function evaluateBoard not implemented
 }

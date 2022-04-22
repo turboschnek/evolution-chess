@@ -65,7 +65,7 @@ int minimax(Tboard *b, const TchNet* net, float seconds, char *output);
  * @return numerical evaluation of position
  * @note use minimax() instead
  */
-int inner_minimax(Tboard *b, TchNet* net, int depth, bool isMax, float alfa, float beta);
+float innerMinimax(Tboard *b, const TchNet* net, int depth, bool isMax, float alfa, float beta);
 
 
 /**
@@ -75,14 +75,23 @@ void sortPopulation(TchNet** population, float *keys, int populationCount, bool 
 
 /**
  * randomizes population`s order
+ * 
+ * net+key pairs remain together
  */
 void shufflePopulationWithKeys(TchNet** population, float* keys, int populationCount);
 
 /**
  * sorts ml based on keys` values
  */
-void sortMoveList(TmoveList* ml, int *keys, bool increasing);
+void sortMoveList(TmoveList* ml, float *keys, bool increasing);
 
+
+/**
+ * returns evaluation of position
+ * 
+ * if net is null, uses primitiveEval
+ */
+float evaluateBoard(const Tboard* b, const TchNet* net);
 
 /**
  * sum of piece values from fun getPieceValue
