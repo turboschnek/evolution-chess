@@ -4,6 +4,7 @@
  * Year:     2022
  */
 
+#include "ai.h"
 #include "chess_net.h"
 #include "chess_logic.h"
 #include "chess_structs.h"
@@ -61,5 +62,7 @@ int main(){
 
   //chessNetworkTest();
 
-  chessLogicBasicTest();
+  //chessLogicBasicTest();
+
+  chNetEvolution();
 }

@@ -19,17 +19,19 @@
 
 #define MINIMAX_WIN_EVAL_COEF 100000
 
+#define PRIMITIVE_PIECE_VALUE_ENDGAME_THRESHOLD 15
+
 void chNetEvolution()
 {
-  const int maxGeneration = 100;  // max number of generations in simulation
+  const int maxGeneration = 20;  // max number of generations in simulation
   const int populationCount = 100;  // number of networks in population
   const int mutationRareness = 100;  // 1 in mutationRareness neurons gets randomized
 
   const int netStruct[4] = {64, 200, 100, 1};
   const int netStructLayerCount = sizeof(netStruct) / sizeof(*netStruct);
 
-  const int tournamentRounds = 2;
-  const float tournamentMoveTime = 0.1; 
+  const int tournamentRounds = 1;
+  const float tournamentMoveTime = 0.01; 
 
   TchNet** population = malloc(populationCount * sizeof(TchNet*));
   for(int i = 0; i < populationCount; ++i){
@@ -40,6 +42,9 @@ void chNetEvolution()
   for(int i = 0;
       (i < maxGeneration);
       ++i){
+    
+    printf("generation: %d\n", i);
+
     quickTournament(population, populationCount,
                     tournamentRounds, tournamentMoveTime);
 
@@ -54,8 +59,17 @@ void chNetEvolution()
   }
 
 
+  if(canAnyoneBeatPrimitiveEval(population, populationCount)){
+    printf("someone is better than primitive eval");
+  }
+  
   for(int i = 0; i < populationCount; ++i){
-    const char filename[11] = {'s', 'a', 'v', 'e', '_', i, '.', 't', 'x', 't', '\0'};
+    char filename[15] = {'s', 'a', 'v', 'e', '_', '_', '_', '_', '.', 't', 'x', 't', '\0'};
+    int a = 0;
+    for(int j = i+1; j != 0; j = j/10){
+      filename[7 - a] = '0' + j%10;
+      ++a;
+    }
     FILE* file = fopen(filename, "w");
     if(file != NULL){
       fprintChNet(file, population[i]);
@@ -64,6 +78,8 @@ void chNetEvolution()
 
     freeChNet(population[i]);
   }
+
+  free(population);
 }
 
 
@@ -75,17 +91,21 @@ void quickTournament(TchNet** population, int populationCount, int rounds,
   for(int round = 0; round < rounds; ++round){
     shufflePopulationWithKeys(population, keys, populationCount);
     for(int i = 0; i < populationCount; i += 2){
+      printf("game: %d ", i/2);
       switch (game(population[i], population[i+1], timeForMove)){
         case 0:  //draw
+          printf("draw\n");
           keys[i] += 0.3;
-          keys[i+1] += 0.3;
+          keys[i+1] += 0.4;
           break;
         
         case 1: //win of white
-          keys[i] += 1;
+          printf("white\n");
+          keys[i] += 0.7;
           break;
 
         case -1:  //win of black
+          printf("black\n");
           keys[i+1] += 1;
           break;
 
@@ -131,6 +151,22 @@ void sortPopulation(TchNet** population, float *keys, int populationCount, bool 
       keys[j+1] = tempKey;
     }
   }
+}
+
+bool canAnyoneBeatPrimitiveEval(TchNet** population, int populationCount)
+{
+  for(int i = 0; i < populationCount; ++i){
+    if(game(population[i], NULL, 0.01) == 1){
+      printf("net %d won as white\n", i);
+      if(game(NULL, population[i], 0.01) == -1){
+        printf("net %d won as black\n", i);
+        return true;
+      }
+    } else {
+      printf("net %d lost\n", i);
+    }
+  }
+  return false;
 }
 
 void shufflePopulationWithKeys(TchNet** population, float* keys,
@@ -218,7 +254,7 @@ int minimax(Tboard *b, const TchNet* net, float seconds, char *output)
 
       freeBoard(bCopy);
 
-      isInTime = !(startTime + timeBudget < clock());
+      isInTime = !(startTime + timeBudget < clock()) || depth == startDepth;
       interrupted = !isInTime;
     }
 
@@ -332,5 +368,73 @@ void sortMoveList(TmoveList* ml, float *keys, bool increasing)
 
 float evaluateBoard(const Tboard* b, const TchNet* net)
 {
-  #warning function evaluateBoard not implemented
+  if(net == NULL){
+    return primitiveEval(b);
+  }
+
+  char* posString = boardToPosString(b);
+  float evaluation = chNetPredict(net, posString);
+  free(posString);
+  return evaluation;
+}
+
+float primitiveEval(const Tboard *b)
+{
+  float sum = 0;
+  for(int i = 0; i < 8; i++){
+    for(int j = 0; j < 8; j++){
+      sum += (float) getPieceValue(b->pieces[i][j], i, j, b->pieceCount) * 0.1;
+    }
+  }
+  return sum;
+}
+
+int getPieceValue(char piece, int row, int col, int pieceCount)
+{
+  switch(piece)
+  {
+  
+  // value of king:
+  // in the beginning is highest in corner
+  // in endgame is highest in the centre
+  case 'k':
+    if(pieceCount > PRIMITIVE_PIECE_VALUE_ENDGAME_THRESHOLD){
+      if(row == 7)
+        return (abs(35 - (col*10))) / 2;
+      return 0;
+    }
+    return -((abs(35 - (col*10)) + abs(35 - (row*10))) / 2);
+  case 'K':
+    if(pieceCount > PRIMITIVE_PIECE_VALUE_ENDGAME_THRESHOLD){
+      if(row == 0)
+        return -(abs(35 - (col*10))) / 2;
+      return 0;
+    }
+    return ((abs(35 - (col*10)) + abs(35 - (row*10))) / 2);
+
+  case 'q':
+    return 900;
+  case 'Q':
+    return -900;
+  case 'b':
+    return 300;
+  case 'B':
+    return -300;
+  case 'n':
+    // forces knights to be in the middle, where it is ideal for them
+    return 300 - ((abs(35 - (col*10)) + abs(35 - (row*10))) / 10);
+  case 'N':
+    return -(300 - ((abs(35 - (col*10)) + abs(35 - (row*10))) / 10));
+  case 'r':
+    return 500;
+  case 'R':
+    return -500;
+  case 'p':
+    // pawns are most valuable in middle cols and near promotion
+    return 100 + (7-row) - (abs(35 - (col*10)) / 10);
+  case 'P':
+    return -(100 + row - (abs(35 - (col*10)) / 10));
+  default:
+    return 0;
+  }
 }

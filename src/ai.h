@@ -85,6 +85,13 @@ void shufflePopulationWithKeys(TchNet** population, float* keys, int populationC
  */
 void sortMoveList(TmoveList* ml, float *keys, bool increasing);
 
+/**
+ * returns true if there is a net that can beat primitiveEval
+ * 
+ * let`s everyone play against primitive and if someone wins as black and white
+ * returns true
+ */
+bool canAnyoneBeatPrimitiveEval(TchNet** population, int populationCount);
 
 /**
  * returns evaluation of position
@@ -96,7 +103,7 @@ float evaluateBoard(const Tboard* b, const TchNet* net);
 /**
  * sum of piece values from fun getPieceValue
  */
-float primitiveEval(const char* posString);
+float primitiveEval(const Tboard* b);
 
 /**
  * 
