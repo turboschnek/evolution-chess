@@ -28,10 +28,10 @@ void chNetEvolution()
   const int populationCount = 100;  // number of networks in population
   const int mutationRareness = 100;  // 1 in mutationRareness neurons gets randomized
 
-  const int netStruct[4] = {64, 200, 100, 1};
+  const int netStruct[3] = {64, 10, 1};
   const int netStructLayerCount = sizeof(netStruct) / sizeof(*netStruct);
 
-  const int tournamentRounds = 3;
+  const int tournamentRounds = 2;
   const float tournamentMoveTime = 0.01; 
 
   TchNet** population = malloc(populationCount * sizeof(TchNet*));
@@ -107,10 +107,6 @@ void quickTournament(TchNet** population, int populationCount, int rounds,
 
   sortPopulation(population, keys, populationCount, false);
 
-  for(int i = 0; i < populationCount; ++i){
-    printf("%f\n", keys[i]);
-  }
-
   free(keys);
 }
 
@@ -147,18 +143,22 @@ void sortPopulation(TchNet** population, float *keys, int populationCount, bool 
 
 bool canAnyoneBeatPrimitiveEval(TchNet** population, int populationCount)
 {
+  const float timeForMove = 1.0;
+  bool canAnyone = false;
+  
+  #pragma omp parallel for
   for(int i = 0; i < populationCount; ++i){
-    if(game(population[i], NULL, 0.01) == 1){
+    if(game(population[i], NULL, timeForMove) == 1){
       printf("net %d won as white\n", i);
-      if(game(NULL, population[i], 0.01) == -1){
+      if(game(NULL, population[i], timeForMove) == -1){
         printf("net %d won as black\n", i);
-        return true;
+        canAnyone = true;
       }
     } else {
       printf("net %d lost\n", i);
     }
   }
-  return false;
+  return canAnyone;
 }
 
 void shufflePopulationWithKeys(TchNet** population, float* keys,

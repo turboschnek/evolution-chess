@@ -223,6 +223,7 @@ void generateAllPossibleMoves(Tboard * b, TmoveList *ml)
     }
     fprintf(errLog, "kingPos is not valid in fun generateAllPossibleMoves\n");
     fprintf(errLog, "posString: %s\n", boardToPosString(b));
+    fprintf(errLog, "last move: %s\n", b->lastMove);
     fclose(errLog);
     return;
   }
