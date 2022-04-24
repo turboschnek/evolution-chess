@@ -13,6 +13,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <omp.h>
 
 
 #define MAX_MINIMAX_DEPTH 20
@@ -23,14 +24,14 @@
 
 void chNetEvolution()
 {
-  const int maxGeneration = 20;  // max number of generations in simulation
+  const int maxGeneration = 100;  // max number of generations in simulation
   const int populationCount = 100;  // number of networks in population
   const int mutationRareness = 100;  // 1 in mutationRareness neurons gets randomized
 
   const int netStruct[4] = {64, 200, 100, 1};
   const int netStructLayerCount = sizeof(netStruct) / sizeof(*netStruct);
 
-  const int tournamentRounds = 1;
+  const int tournamentRounds = 3;
   const float tournamentMoveTime = 0.01; 
 
   TchNet** population = malloc(populationCount * sizeof(TchNet*));
@@ -43,7 +44,7 @@ void chNetEvolution()
       (i < maxGeneration);
       ++i){
     
-    printf("generation: %d\n", i);
+    printf("----------GENERATION %3d----------\n", i);
 
     quickTournament(population, populationCount,
                     tournamentRounds, tournamentMoveTime);
@@ -56,26 +57,16 @@ void chNetEvolution()
                                      population[(j+1) % elderyCount],
                                      mutationRareness);
     }
+
+    savePopulation(population, populationCount);
   }
 
 
   if(canAnyoneBeatPrimitiveEval(population, populationCount)){
     printf("someone is better than primitive eval");
   }
-  
-  for(int i = 0; i < populationCount; ++i){
-    char filename[15] = {'s', 'a', 'v', 'e', '_', '_', '_', '_', '.', 't', 'x', 't', '\0'};
-    int a = 0;
-    for(int j = i+1; j != 0; j = j/10){
-      filename[7 - a] = '0' + j%10;
-      ++a;
-    }
-    FILE* file = fopen(filename, "w");
-    if(file != NULL){
-      fprintChNet(file, population[i]);
-    }
-    fclose(file);
 
+  for(int i = 0; i < populationCount; ++i){
     freeChNet(population[i]);
   }
 
@@ -90,34 +81,35 @@ void quickTournament(TchNet** population, int populationCount, int rounds,
 
   for(int round = 0; round < rounds; ++round){
     shufflePopulationWithKeys(population, keys, populationCount);
+    
+    #pragma omp parallel for
     for(int i = 0; i < populationCount; i += 2){
-      printf("game: %d ", i/2);
       switch (game(population[i], population[i+1], timeForMove)){
         case 0:  //draw
-          printf("draw\n");
+          printf("game %d/%3d: draw\n", round+1, (i/2)+1);
           keys[i] += 0.3;
           keys[i+1] += 0.4;
           break;
         
         case 1: //win of white
-          printf("white\n");
-          keys[i] += 0.7;
+          printf("game %d/%3d: white\n", round+1, (i/2)+1);
+          keys[i] += 1.0;
           break;
 
         case -1:  //win of black
-          printf("black\n");
-          keys[i+1] += 1;
+          printf("game %d/%3d: black\n", round+1, (i/2)+1);
+          keys[i+1] += 1.1;
           break;
-
-        default:
-          fprintf(stderr, "unpredictable error in function quickTournament");
-          return;
       }
     }
   }
   
 
-  sortPopulation(population, keys, populationCount, true);
+  sortPopulation(population, keys, populationCount, false);
+
+  for(int i = 0; i < populationCount; ++i){
+    printf("%f\n", keys[i]);
+  }
 
   free(keys);
 }
@@ -138,7 +130,7 @@ void sortPopulation(TchNet** population, float *keys, int populationCount, bool 
       keys[j+1] = tempKey;
     }
   } else {
-    for(int i = 1; i < populationCount; --i){
+    for(int i = 1; i < populationCount; ++i){
       int j;
       float tempKey = keys[i];
       TchNet* tempNet = population[i];
@@ -216,6 +208,25 @@ int game(const TchNet* white, const TchNet* black, float timeBudget)
   freeBoard(b);
   free(moveBuffer);
   return result;
+}
+
+bool savePopulation(TchNet** population, int populationCount)
+{
+  for(int i = 0; i < populationCount; ++i){
+    char filename[26] = "population/save____.txt";
+    int a = 0;
+    for(int j = i+1; j != 0; j = j/10){
+      filename[18 - a] = '0' + j%10;
+      ++a;
+    }
+    FILE* file = fopen(filename, "w");
+    if(file == NULL){
+      return false;
+    }
+    fprintChNet(file, population[i]);
+    fclose(file);    
+  }
+  return true;
 }
 
 int minimax(Tboard *b, const TchNet* net, float seconds, char *output)

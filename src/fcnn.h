@@ -9,8 +9,8 @@
 #define __MODULE_FULLY_CONNECTED_NEURAL_NET_H
 
 
-#define MIN_RAND_WEIGHT -100
-#define MAX_RAND_WEIGHT 100
+#define MIN_RAND_WEIGHT -1
+#define MAX_RAND_WEIGHT 1
 
 #include "neuron.h"
 

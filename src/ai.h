@@ -38,6 +38,12 @@ void quickTournament(TchNet** population, int populationCount, int rounds,
  */
 int game(const TchNet* white, const TchNet* black, float timeBudget);
 
+/**
+ * saves population
+ * 
+ * @return true if OK, else false
+ */
+bool savePopulation(TchNet** population, int populationCount);
 
 /**
  * Uses minimax to choose a move.

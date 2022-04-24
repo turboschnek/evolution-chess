@@ -216,8 +216,14 @@ void generateAllPossibleMoves(Tboard * b, TmoveList *ml)
   if(!(kingPos[0] >= 0 && kingPos[0] <= 7 &&
        kingPos[1] >= 0 && kingPos[1] <= 7)){
     free(kingPos);
-    fprintf(stderr, "\nERROR:\n");
-    fprintf(stderr, "kingPos is not valid in fun generateAllPossibleMoves\n");
+
+    FILE* errLog = fopen("kingPos_error_log.txt", "a");
+    if(errLog == NULL){
+      return;
+    }
+    fprintf(errLog, "kingPos is not valid in fun generateAllPossibleMoves\n");
+    fprintf(errLog, "posString: %s\n", boardToPosString(b));
+    fclose(errLog);
     return;
   }
   if(gotChecked(b, kingPos)){

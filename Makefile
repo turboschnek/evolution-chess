@@ -3,7 +3,7 @@
 # Year:     2022
 
 CC = gcc
-CFLAGS = -Wall -g -O3
+CFLAGS = -fopenmp -Wall -g -O3
 LIBS= -lm
 
 OBJFILES= main.o ai.o chess_net.o fcnn.o neuron.o chess_logic.o chess_structs.o
@@ -11,6 +11,7 @@ OBJFILES= main.o ai.o chess_net.o fcnn.o neuron.o chess_logic.o chess_structs.o
 SRCDIR= src
 BINDIR= bin
 BINNAME= nn
+POPULATION_SAVE_DIR= population
 
 default: build clean
 
@@ -23,6 +24,7 @@ build: makedir $(OBJFILES)
 makedir:
 	rm -rf $(BINDIR)
 	mkdir $(BINDIR)
+	cd $(BINDIR); mkdir $(POPULATION_SAVE_DIR)
 
 clean:
 	rm -f $(OBJFILES)
